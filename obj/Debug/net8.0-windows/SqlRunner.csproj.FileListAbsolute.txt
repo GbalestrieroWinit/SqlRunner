@@ -1,0 +1,8 @@
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\SqlRunner.exe
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\SqlRunner.deps.json
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\SqlRunner.runtimeconfig.json
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\SqlRunner.dll
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\SqlRunner.pdb
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\Microsoft.Extensions.Logging.Abstractions.dll
+D:\Gianmarco\ProgettiC#\SqlRunner\obj\VerifyBuild\Debug\net8.0-windows\MySqlConnector.dll

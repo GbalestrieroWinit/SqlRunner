@@ -1,0 +1,8 @@
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\SqlRunner.exe
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\SqlRunner.dll
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\SqlRunner.deps.json
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\SqlRunner.runtimeconfig.json
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\SqlRunner.pdb
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\Microsoft.Extensions.Logging.Abstractions.dll
+D:\Gianmarco\ProgettiC#\SqlRunner\Publish\MySqlConnector.dll
