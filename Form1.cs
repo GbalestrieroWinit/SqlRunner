@@ -16,7 +16,11 @@ namespace SqlRunner
 
         private ComboBox connectionsCombo = null!;
         private TextBox connectionNameText = null!;
-        private TextBox connectionStringText = null!;
+        private TextBox serverText = null!;
+        private NumericUpDown portInput = null!;
+        private TextBox userText = null!;
+        private TextBox passwordText = null!;
+        private ComboBox databasesCombo = null!;
         private RichTextBox queryText = null!;
         private TextBox queryFeedbackText = null!;
         private DataGridView queryResultsGrid = null!;
@@ -36,7 +40,11 @@ namespace SqlRunner
         public Form1()
         {
             InitializeComponent();
-            Icon = new Icon(Path.Combine(AppContext.BaseDirectory, "app.ico"));
+            var iconPath = Path.Combine(AppContext.BaseDirectory, "app.ico");
+            if (File.Exists(iconPath))
+            {
+                Icon = new Icon(iconPath);
+            }
             connectionsFilePath = Path.Combine(AppContext.BaseDirectory, "connections.json");
 
             BuildUi();
@@ -72,21 +80,16 @@ namespace SqlRunner
                 Dock = DockStyle.Fill,
                 Padding = new Padding(18),
                 ColumnCount = 1,
-                RowCount = 9
+                RowCount = 14
             };
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            for (var i = 0; i < 14; i++)
+            {
+                root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
 
             root.Controls.Add(new Label
             {
-                Text = "Connessioni Database Salvate",
+                Text = "Login MariaDB",
                 AutoSize = true,
                 Font = new Font(Font, FontStyle.Bold),
                 Margin = new Padding(0, 0, 0, 8)
@@ -103,51 +106,100 @@ namespace SqlRunner
             connectionsCombo.SelectedIndexChanged += (_, _) => PopulateConnectionFields();
             root.Controls.Add(connectionsCombo, 0, 1);
 
-            root.Controls.Add(new Label { Text = "Connessione:", AutoSize = true }, 0, 2);
+            root.Controls.Add(new Label { Text = "Nome profilo:", AutoSize = true }, 0, 2);
             connectionNameText = new TextBox { Dock = DockStyle.Top, Margin = new Padding(0, 4, 0, 12) };
             root.Controls.Add(connectionNameText, 0, 3);
 
-            root.Controls.Add(new Label { Text = "String di connessione MariaDB", AutoSize = true }, 0, 4);
-            connectionStringText = new TextBox
+            root.Controls.Add(new Label { Text = "Server:", AutoSize = true }, 0, 4);
+            serverText = new TextBox
             {
-                Dock = DockStyle.Fill,
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical,
-                Font = new Font("Consolas", 10),
+                Dock = DockStyle.Top,
+                Text = "localhost",
                 Margin = new Padding(0, 4, 0, 12)
             };
-            root.Controls.Add(connectionStringText, 0, 5);
+            root.Controls.Add(serverText, 0, 5);
 
-            root.Controls.Add(new Label
+            root.Controls.Add(new Label { Text = "Porta:", AutoSize = true }, 0, 6);
+            portInput = new NumericUpDown
             {
-                Text = "Esempio: Server=localhost;Port=3306;User=my_user;Password=my_password;  (Database=... e opzionale)",
-                AutoSize = true,
-                ForeColor = SystemColors.GrayText,
-                Margin = new Padding(0, 0, 0, 12)
-            }, 0, 6);
+                Dock = DockStyle.Top,
+                Minimum = 1,
+                Maximum = 65535,
+                Value = 3306,
+                Margin = new Padding(0, 4, 0, 12)
+            };
+            root.Controls.Add(portInput, 0, 7);
 
-            var buttons = new FlowLayoutPanel
+            root.Controls.Add(new Label { Text = "Utente:", AutoSize = true }, 0, 8);
+            userText = new TextBox
+            {
+                Dock = DockStyle.Top,
+                Text = "root",
+                Margin = new Padding(0, 4, 0, 12)
+            };
+            root.Controls.Add(userText, 0, 9);
+
+            root.Controls.Add(new Label { Text = "Password:", AutoSize = true }, 0, 10);
+            passwordText = new TextBox
+            {
+                Dock = DockStyle.Top,
+                UseSystemPasswordChar = true,
+                Margin = new Padding(0, 4, 0, 12)
+            };
+            root.Controls.Add(passwordText, 0, 11);
+
+            var loginButtons = new FlowLayoutPanel
             {
                 AutoSize = true,
                 Dock = DockStyle.Top,
                 FlowDirection = FlowDirection.LeftToRight,
                 Margin = new Padding(0)
             };
+            loginButtons.Controls.Add(MakeButton("Login", (_, _) => LoginAndLoadDatabases()));
+            loginButtons.Controls.Add(MakeButton("Salva profilo", (_, _) => SaveConnection()));
+            loginButtons.Controls.Add(MakeButton("Nuovo", (_, _) => ClearConnectionFields()));
+            loginButtons.Controls.Add(MakeButton("Cancella profilo", (_, _) => DeleteConnection()));
+            root.Controls.Add(loginButtons, 0, 12);
 
-            buttons.Controls.Add(MakeButton("Nuova", (_, _) => ClearConnectionFields()));
-            buttons.Controls.Add(MakeButton("Salva", (_, _) => SaveConnection()));
-            buttons.Controls.Add(MakeButton("Cancella", (_, _) => DeleteConnection()));
-            buttons.Controls.Add(MakeButton("Connetti", (_, _) => TestAndUseConnection()));
+            var databasePanel = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                ColumnCount = 1,
+                RowCount = 4,
+                Margin = new Padding(0, 10, 0, 0)
+            };
+            databasePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            databasePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            databasePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            databasePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-            root.Controls.Add(buttons, 0, 7);
+            databasePanel.Controls.Add(new Label
+            {
+                Text = "Database disponibili:",
+                AutoSize = true,
+                Font = new Font(Font, FontStyle.Bold),
+                Margin = new Padding(0, 0, 0, 6)
+            }, 0, 0);
+
+            databasesCombo = new ComboBox
+            {
+                Dock = DockStyle.Top,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Enabled = false,
+                Margin = new Padding(0, 0, 0, 8)
+            };
+            databasePanel.Controls.Add(databasesCombo, 0, 1);
+
+            databasePanel.Controls.Add(MakeButton("Usa database selezionato", (_, _) => UseSelectedDatabase()), 0, 2);
+            root.Controls.Add(databasePanel, 0, 13);
 
             activeConnectionLabel = new Label
             {
-                Text = "Nessuna COnnessione Attiva",
+                Text = "Nessuna Connessione Attiva",
                 AutoSize = true,
                 Padding = new Padding(0, 14, 0, 0)
             };
-            root.Controls.Add(activeConnectionLabel, 0, 8);
+            databasePanel.Controls.Add(activeConnectionLabel, 0, 3);
 
             page.Controls.Add(root);
             return page;
@@ -304,7 +356,10 @@ namespace SqlRunner
                 connections.Add(new DatabaseConnection
                 {
                     Name = "Local MariaDB",
-                    ConnectionString = "Server=localhost;Port=3306;User=root;Password=root;"
+                    Server = "localhost",
+                    Port = 3306,
+                    User = "root",
+                    Password = "root"
                 });
             }
 
@@ -326,35 +381,60 @@ namespace SqlRunner
             }
 
             connectionNameText.Text = connection.Name;
-            connectionStringText.Text = connection.ConnectionString;
+            ApplyLegacyConnectionString(connection);
+            serverText.Text = connection.Server;
+            portInput.Value = Math.Clamp(connection.Port, (int)portInput.Minimum, (int)portInput.Maximum);
+            userText.Text = connection.User;
+            passwordText.Text = connection.Password;
         }
 
         private void ClearConnectionFields()
         {
             connectionsCombo.SelectedIndex = -1;
             connectionNameText.Clear();
-            connectionStringText.Clear();
+            serverText.Text = "localhost";
+            portInput.Value = 3306;
+            userText.Text = "root";
+            passwordText.Clear();
+            databasesCombo.DataSource = null;
+            databasesCombo.Enabled = false;
+            activeConnectionLabel.Text = "Nessuna Connessione Attiva";
         }
 
         private void SaveConnection()
         {
             var name = connectionNameText.Text.Trim();
-            var connectionString = connectionStringText.Text.Trim();
+            var server = serverText.Text.Trim();
+            var user = userText.Text.Trim();
 
-            if (name.Length == 0 || connectionString.Length == 0)
+            if (name.Length == 0 || server.Length == 0 || user.Length == 0)
             {
-                MessageBox.Show("Inserire sia il nome della connessione che la stringa di connessione.", "Dettagli Mancanti");
+                MessageBox.Show("Inserire nome profilo, server e utente.", "Dettagli Mancanti");
                 return;
             }
+
+            var savedConnection = new DatabaseConnection
+            {
+                Name = name,
+                Server = server,
+                Port = (int)portInput.Value,
+                User = user,
+                Password = passwordText.Text,
+                ConnectionString = BuildServerConnectionString()
+            };
 
             var existing = connections.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
             if (existing is null)
             {
-                connections.Add(new DatabaseConnection { Name = name, ConnectionString = connectionString });
+                connections.Add(savedConnection);
             }
             else
             {
-                existing.ConnectionString = connectionString;
+                existing.Server = savedConnection.Server;
+                existing.Port = savedConnection.Port;
+                existing.User = savedConnection.User;
+                existing.Password = savedConnection.Password;
+                existing.ConnectionString = savedConnection.ConnectionString;
             }
 
             PersistConnections();
@@ -382,17 +462,21 @@ namespace SqlRunner
             File.WriteAllText(connectionsFilePath, json);
         }
 
-        private void TestAndUseConnection()
+        private void LoginAndLoadDatabases()
         {
             var connection = new DatabaseConnection
             {
                 Name = connectionNameText.Text.Trim(),
-                ConnectionString = connectionStringText.Text.Trim()
+                Server = serverText.Text.Trim(),
+                Port = (int)portInput.Value,
+                User = userText.Text.Trim(),
+                Password = passwordText.Text,
+                ConnectionString = BuildServerConnectionString()
             };
 
-            if (connection.Name.Length == 0 || connection.ConnectionString.Length == 0)
+            if (connection.Server.Length == 0 || connection.User.Length == 0)
             {
-                MessageBox.Show("Inserire sia il nome della connessione che la stringa di connessione.", "Dettagli Mancanti");
+                MessageBox.Show("Inserire server e utente.", "Dettagli Mancanti");
                 return;
             }
 
@@ -400,20 +484,60 @@ namespace SqlRunner
             {
                 using var mysqlConnection = new MySqlConnection(connection.ConnectionString);
                 mysqlConnection.Open();
-                using var command = new MySqlCommand("SELECT 1", mysqlConnection);
-                command.ExecuteScalar();
+                using var command = new MySqlCommand("SHOW DATABASES", mysqlConnection);
+                using var reader = command.ExecuteReader();
+
+                var databases = new List<string>();
+                while (reader.Read())
+                {
+                    databases.Add(reader.GetString(0));
+                }
 
                 currentConnection = connection;
-                activeConnectionLabel.Text = $"Connessione Attiva: {connection.Name}";
-                queryFeedbackText.Text = $"Connesso a {connection.Name}.";
-                tableFeedbackText.Text = $"Connesso a {connection.Name}.";
-                SaveConnection();
-                LoadTables();
+                databasesCombo.DataSource = databases;
+                databasesCombo.Enabled = databases.Count > 0;
+
+                activeConnectionLabel.Text = "Login eseguito. Seleziona un database.";
+                queryFeedbackText.Text = $"Login eseguito. Database disponibili: {databases.Count}.";
+                tableFeedbackText.Text = $"Login eseguito. Database disponibili: {databases.Count}.";
+
+                if (connection.Name.Length > 0)
+                {
+                    SaveConnection();
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Connessione fallita", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                currentConnection = null;
+                databasesCombo.DataSource = null;
+                databasesCombo.Enabled = false;
+                MessageBox.Show(ex.Message, "Login fallito", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void UseSelectedDatabase()
+        {
+            if (databasesCombo.SelectedItem is not string databaseName)
+            {
+                MessageBox.Show("Seleziona un database.", "Database mancante");
+                return;
+            }
+
+            currentConnection = new DatabaseConnection
+            {
+                Name = string.IsNullOrWhiteSpace(connectionNameText.Text) ? databaseName : connectionNameText.Text.Trim(),
+                Server = serverText.Text.Trim(),
+                Port = (int)portInput.Value,
+                User = userText.Text.Trim(),
+                Password = passwordText.Text,
+                Database = databaseName,
+                ConnectionString = BuildDatabaseConnectionString(databaseName)
+            };
+
+            activeConnectionLabel.Text = $"Database attivo: {databaseName}";
+            queryFeedbackText.Text = $"Database attivo: {databaseName}.";
+            tableFeedbackText.Text = $"Database attivo: {databaseName}.";
+            LoadTables();
         }
 
         private void RunSql()
@@ -432,34 +556,9 @@ namespace SqlRunner
 
             ClearQueryOutput();
 
-            try
-            {
-                using var connection = new MySqlConnection(connectionString);
-                connection.Open();
-                using var command = new MySqlCommand(sql, connection);
-                using var reader = command.ExecuteReader();
-
-                if (reader.FieldCount > 0)
-                {
-                    var table = new DataTable();
-                    table.Load(reader);
-                    queryResultsGrid.DataSource = table;
-                    queryFeedbackText.Text = $"Query eseguita. Righe influenzate: {table.Rows.Count}.";
-                }
-                else
-                {
-                    queryResultsGrid.DataSource = null;
-                    queryFeedbackText.Text = $"Comando eseguito. Righe influenzate: {reader.RecordsAffected}.";
-                }
-            }
-            catch (MySqlException ex)
-            {
-                queryFeedbackText.Text = FormatMySqlError(ex);
-            }
-            catch (Exception ex)
-            {
-                queryFeedbackText.Text = ex.Message;
-            }
+            var result = DatabaseHelper.ExecuteQuery(sql, connectionString);
+            queryResultsGrid.DataSource = result["tabella"];
+            queryFeedbackText.Text = Convert.ToString(result["feedback"]);
         }
 
         private void ClearQueryOutput()
@@ -524,24 +623,22 @@ namespace SqlRunner
             }
 
             const string sql = """
-                SELECT TABLE_SCHEMA, TABLE_NAME
+                SELECT TABLE_NAME
                 FROM information_schema.TABLES
                 WHERE TABLE_TYPE = 'BASE TABLE'
                   AND (DATABASE() IS NULL OR TABLE_SCHEMA = DATABASE())
                   AND TABLE_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')
-                ORDER BY TABLE_SCHEMA, TABLE_NAME
+                ORDER BY TABLE_NAME
                 """;
 
-            try
+            var content = DatabaseHelper.ExecuteQuery(sql, connectionString);
+            if (content["tabella"] is DataTable table)
             {
-                var table = ExecuteDataTable(connectionString, sql);
                 tablesSource.DataSource = table;
                 tableFeedbackText.Text = $"Tabelle caricate. Numero: {table.Rows.Count}.";
             }
-            catch (Exception ex)
-            {
-                tableFeedbackText.Text = ex is MySqlException mysqlException ? FormatMySqlError(mysqlException) : ex.Message;
-            }
+            else tableFeedbackText.Text = Convert.ToString(content["feedback"]);
+            
         }
 
         private void LoadSelectedTableData()
@@ -551,60 +648,87 @@ namespace SqlRunner
                 return;
             }
 
-            var schema = Convert.ToString(row["TABLE_SCHEMA"]) ?? "";
             var tableName = Convert.ToString(row["TABLE_NAME"]) ?? "";
-            var sql = $"SELECT * FROM {QuoteMariaDbName(schema)}.{QuoteMariaDbName(tableName)}";
+            var sql = $"SELECT * FROM {QuoteMariaDbName(tableName)}";
 
-            try
+            var content = DatabaseHelper.ExecuteQuery(sql, connectionString);
+            if (content["tabella"] is DataTable table)
             {
-                var table = ExecuteDataTable(connectionString, sql);
                 tableDataGrid.DataSource = table;
-                //tableFeedbackText.Text = $"Eseguito: {sql}{Environment.NewLine}Rows returned: {table.Rows.Count}.";
             }
-            catch (Exception ex)
-            {
-                tableFeedbackText.Text = ex is MySqlException mysqlException ? FormatMySqlError(mysqlException) : ex.Message;
-            }
+            else tableFeedbackText.Text = Convert.ToString(content["feedback"]);
         }
 
         private bool TryGetConnection(out string connectionString)
         {
-            connectionString = currentConnection?.ConnectionString ?? connectionStringText.Text.Trim();
+            connectionString = currentConnection?.ConnectionString ?? "";
 
             if (connectionString.Length > 0)
             {
                 return true;
             }
 
-            MessageBox.Show("Collegarsi ad un database.", "nessuna connessione attiva");
+            MessageBox.Show("Effettuare il login e selezionare un database.", "nessuna connessione attiva");
             return false;
         }
 
-        private static DataTable ExecuteDataTable(string connectionString, string sql)
+        private string BuildServerConnectionString()
         {
-            using var connection = new MySqlConnection(connectionString);
-            connection.Open();
-            using var command = new MySqlCommand(sql, connection);
-            using var reader = command.ExecuteReader();
-            var table = new DataTable();
-            table.Load(reader);
-            return table;
+            var builder = new MySqlConnectionStringBuilder
+            {
+                Server = serverText.Text.Trim(),
+                Port = (uint)portInput.Value,
+                UserID = userText.Text.Trim(),
+                Password = passwordText.Text
+            };
+
+            return builder.ConnectionString;
+        }
+
+        private string BuildDatabaseConnectionString(string databaseName)
+        {
+            var builder = new MySqlConnectionStringBuilder(BuildServerConnectionString())
+            {
+                Database = databaseName
+            };
+
+            return builder.ConnectionString;
+        }
+
+        private static void ApplyLegacyConnectionString(DatabaseConnection connection)
+        {
+            if (string.IsNullOrWhiteSpace(connection.ConnectionString))
+            {
+                return;
+            }
+
+            try
+            {
+                var builder = new MySqlConnectionStringBuilder(connection.ConnectionString);
+                connection.Server = string.IsNullOrWhiteSpace(connection.Server) ? builder.Server : connection.Server;
+                connection.Port = connection.Port == 0 ? (int)builder.Port : connection.Port;
+                connection.User = string.IsNullOrWhiteSpace(connection.User) ? builder.UserID : connection.User;
+                connection.Password = string.IsNullOrEmpty(connection.Password) ? builder.Password : connection.Password;
+                connection.Database = string.IsNullOrWhiteSpace(connection.Database) ? builder.Database : connection.Database;
+            }
+            catch
+            {
+                // Ignore old malformed profile entries; the user can edit the visible fields.
+            }
         }
 
         private static string QuoteMariaDbName(string value) => $"`{value.Replace("`", "``")}`";
 
-        private static string FormatMySqlError(MySqlException ex)
-        {
-            var lines = new List<string> { "Errore SQL:" };
-            lines.Add($"- {ex.Message}");
-            lines.Add($"  Codice errore: {ex.ErrorCode}; numero: {ex.Number}; stato SQL: {ex.SqlState}");
 
-            return string.Join(Environment.NewLine, lines);
-        }
 
         private sealed class DatabaseConnection
         {
             public string Name { get; set; } = "";
+            public string Server { get; set; } = "";
+            public int Port { get; set; } = 3306;
+            public string User { get; set; } = "";
+            public string Password { get; set; } = "";
+            public string Database { get; set; } = "";
             public string ConnectionString { get; set; } = "";
         }
     }
