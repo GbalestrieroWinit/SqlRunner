@@ -31,7 +31,7 @@ namespace SqlRunner
         private bool isHighlightingSql;
 
         private static readonly Regex SqlIdentifierRegex = new(@"\b[A-Za-z_][A-Za-z0-9_]*\b", RegexOptions.Compiled);
-        private static readonly Regex SqlKeywordRegex = new(@"\b(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|RENAME|REPLACE|WITH|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|ON|GROUP|BY|ORDER|HAVING|LIMIT|OFFSET|VALUES|SET|INTO|AS|AND|OR|NOT|NULL|IS|IN|BETWEEN|LIKE|EXISTS|CASE|WHEN|THEN|ELSE|END|DISTINCT|UNION|ALL|PRIMARY|KEY|FOREIGN|REFERENCES|INDEX|TABLE|DATABASE|VIEW|PROCEDURE|FUNCTION|TRIGGER|BEGIN|COMMIT|ROLLBACK|DESC|DESCRIBE|SHOW|USE)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex SqlKeywordRegex = new(@"\b(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|RENAME|REPLACE|WITH|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|ON|GROUP|BY|ORDER|HAVING|LIMIT|OFFSET|VALUES|SET|INTO|AS|AND|OR|NOT|NULL|IS|IN|BETWEEN|LIKE|EXISTS|CASE|WHEN|THEN|ELSE|END|DISTINCT|UNION|ALL|PRIMARY|KEY|FOREIGN|REFERENCES|INDEX|TABLE|DATABASE|VIEW|PROCEDURE|FUNCTION|TRIGGER|BEGIN|COMMIT|ROLLBACK|DESC|DESCRIBE|SHOW|USE|AUTO_INCREMENT)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex SqlStringRegex = new(@"'([^'\\]|\\.|'')*'|""([^""\\]|\\.|"""")*""", RegexOptions.Compiled);
         private static readonly Regex SqlNumberRegex = new(@"\b\d+(\.\d+)?\b", RegexOptions.Compiled);
         private static readonly Regex SqlCommentRegex = new(@"(--[^\r\n]*|/\*.*?\*/)", RegexOptions.Compiled | RegexOptions.Singleline);
@@ -232,12 +232,13 @@ namespace SqlRunner
                 Font = new Font("Consolas", 10),
                 Text = ""
             };
-            queryText.TextChanged += (_, _) => HighlightSql();
             root.Controls.Add(queryText, 0, 0);
 
             var buttons = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Top };
             buttons.Controls.Add(MakeButton("Esegui", (_, _) => RunSql()));
             buttons.Controls.Add(MakeButton("Pulisci Output", (_, _) => ClearQueryOutput()));
+            buttons.Controls.Add(MakeButton("Colora Testo", (_, _) => HighlightSql()));
+            buttons.Controls.Add(MakeButton("Salva Query", (_, _) => SaveQuery(queryText)));
             root.Controls.Add(buttons, 0, 1);
 
             root.Controls.Add(new Label
@@ -714,6 +715,28 @@ namespace SqlRunner
             catch
             {
                 // Ignore old malformed profile entries; the user can edit the visible fields.
+            }
+        }
+
+        private void SaveQuery(string text)
+        {
+            //Viene aperto il dialog per il salvataggio
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+
+            // 2. Impostazioni del dialog
+            saveFileDialog.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+            saveFileDialog.InitialDirectory = "C:/";
+            saveFileDialog.Title = "Salva la Query";
+
+            // 3. mostra il dialog
+            bool? result = saveFileDialog.ShowDialog();
+
+            // 4. scrivi all'interno del file
+            if (result == true)
+            {
+                string filePath = saveFileDialog.FileName;
+
+                File.WriteAllText(filePath, text);
             }
         }
 
