@@ -1,0 +1,17 @@
+SqlRunner macOS installation
+
+This package contains two app bundles:
+
+- SqlRunner-arm64.app for Apple Silicon Macs
+- SqlRunner-x64.app for Intel Macs
+
+Install:
+
+1. Open the folder for your Mac type.
+2. Drag SqlRunner.app into /Applications.
+3. If macOS blocks the app because it is unsigned, right-click it and choose Open.
+4. If macOS says the executable cannot be opened, run this once in Terminal:
+
+   chmod +x /Applications/SqlRunner.app/Contents/MacOS/SqlRunner
+
+This build is self-contained and does not require installing .NET.

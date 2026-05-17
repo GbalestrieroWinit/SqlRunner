@@ -1,3 +1,7 @@
-/Publish
-/bin/Debug
-/bin/Release
+.vs/
+bin/
+obj/
+dist/
+Publish/
+*.user
+*.csproj.user
